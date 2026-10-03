@@ -1,7 +1,7 @@
 const express = require("express");
 const { createProxyMiddleware, responseInterceptor } = require("http-proxy-middleware");
 
-const TARGET = "https://sisedu.org";
+const TARGET = "https://www.sisedu.org";
 const app = express();
 
 app.use("/plus", express.static("public"));
