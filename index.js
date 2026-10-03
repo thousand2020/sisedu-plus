@@ -12,25 +12,49 @@ app.use(
         target: TARGET,
         changeOrigin: true,
         autoRewrite: true,          //fix redirect location header(s)
-        cookieDomainRewrite: "",    //yummy cookies
-        selfHandleResponse: true,   //need for editing responses
-        on: {
-            proxyRes: responseInterceptor(async (buffer, proxyRes) => {
-                //loose the headers that would block injected code
-                delete proxyRes.headers["content-security-policy"];
-                delete proxyRes.headers["x-frame-options"];
+    cookieDomainRewrite: "",    //yummy cookies
+    selfHandleResponse: true,   //need for editing responses
+    on: {
+        //tricks sveltekit into thinking its the portal
+        proxyReq: (proxyReq, req) => {
+            if (req.headers.origin) proxyReq.setHeader("origin", TARGET);
+            if (req.headers.referer) proxyReq.setHeader("referer", TARGET + req.url);
+        },
 
-                const type = proxyRes.headers["content-type"] || "";
-                if (!type.includes("text/html")) return buffer;
+        proxyRes: responseInterceptor(async (buffer, proxyRes, req, res) => {
+            //loose the headers that would block injected code
+            res.removeHeader("content-security-policy");
+            res.removeHeader("x-frame-options");
 
-                let html = buffer.toString("utf8");
-                html = html.split(TARGET).join(""); //make absolute links relative
+            //keep redirects inside the proxy
+            const loc = res.getHeader("location");
+            if (loc) {
+                try {
+                    const u = new URL(String(loc), TARGET);
+                    if (u.host === new URL(TARGET).host) {
+                        res.setHeader("location", u.pathname + u.search + u.hash);
+                    }
+                } catch (e) {}
+            }
+
+            const type = String(proxyRes.headers["content-type"] || "");
+            const isHtml = type.includes("text/html");
+            const isJs = type.includes("javascript");
+            if (!isHtml && !isJs) return buffer;
+
+            const publicUrl = "https://" + req.headers.host;
+            let body = buffer.toString("utf8");
+            body = body.split(TARGET).join(publicUrl); //point absolute links at the proxy
+
+            if (isHtml) {
                 const inject =
                 '<link rel="stylesheet" href="/plus/skin.css">' +
                 '<script src="/plus/skin.js" defer></script>';
-                return html.replace("</head>", inject + "</head>");
-            }),
-        },
+                body = body.replace("</head>", inject + "</head>");
+            }
+            return body;
+        }),
+    },
     })
 );
 
