@@ -1,6 +1,6 @@
 {
   "name": "sisedu-plus",
-  "version": "1.0.0", //PLS PLS DONT EDIT (if you are a user)
+  "version": "1.0.0",
   "main": "index.js",
   "scripts": { "start": "node index.js" },
   "dependencies": {
