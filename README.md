@@ -28,12 +28,15 @@ PRs and issues are welcome.
 ## FAQ
 
 **Q: Is this allowed?**
+
 **A:** this is a unofficial tool. use at your own risk.
 
 **Q: why is it so slow?/long loading time on first website load?**
+
 **A:** im using render.com's free plan
 
 **Q: why is there no google login?**
+
 **A:** google login just breaks when using a website proxy(what this uses)
 
 ### legal info
