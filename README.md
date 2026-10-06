@@ -1,10 +1,10 @@
 # sisedu-plus
 
-An unofficial proxy service that patches some of the bugs left in sisedu.org's code
+An unofficial proxy service that patches issues and adds some useful features left in sisedu.org's code
 
 ## what does it do?
 
-proxy www.sisedu.org and patches bugs and issues
+proxy www.sisedu.org and patches issues and adds some useful features
 
 ## privacy
 
