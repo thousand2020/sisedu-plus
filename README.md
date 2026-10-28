@@ -10,13 +10,13 @@ proxy www.sisedu.org and patches issues and adds some useful features
 
 Your username, password, and session cookies pass through this proxy on their way to sisedu.org. 
 The code does not log or store them.
-you are trusting this service and its host (render.com or soon-to-be cloudflare pages), which may keep basic request logs. 
+you are trusting this service and its host (render.com or sisedu-plus.thousand-ccd.workers.dev), which may keep basic request logs. 
 If you do not feel safe or comfortable with that, do not use this website.
 
 ## usage
 
 go to
-https://sisedu-plus.onrender.com (or cloudflare worker in the near future
+https://sisedu-plus.onrender.com or https://sisedu-plus.thousand-ccd.workers.dev
 then login with your school account {student id}@sequoiainternationalschool.com. If you dont know your password, go to https://www.sisedu.org and change your password.
 
 ## Contributing
@@ -29,11 +29,11 @@ PRs and issues are welcome.
 
 **Q: Is this allowed?**
 
-**A:** this is a unofficial tool. use at your own risk.
+**A:** this is an unofficial tool. use at your own risk.
 
 **Q: why is it so slow?/long loading time on first website load?**
 
-**A:** im using render.com's free plan
+**A:** *for render*: im using the free plan dont expect much, *for cloudflare worker*: if its on first load its normal, but if its after first load please make a issue.
 
 **Q: why is there no google login?**
 
@@ -43,7 +43,7 @@ PRs and issues are welcome.
 
 this website/repository is not affiliated with or endorsed by sisedu.org
 
-this is a independent and open-source website proxy service for sisedu.org that includes fixes for the portal.
+this is an independent and open-source website proxy service for sisedu.org that includes fixes for the portal.
 
 service is provided as-is, with no warranty, use at your own risk.
 
