@@ -10,13 +10,13 @@ proxy www.sisedu.org and patches issues and adds some useful features
 
 Your username, password, and session cookies pass through this proxy on their way to sisedu.org. 
 The code does not log or store them.
-you are trusting this service and its host (render.com), which may keep basic request logs. 
+you are trusting this service and its host (render.com or soon-to-be cloudflare pages), which may keep basic request logs. 
 If you do not feel safe or comfortable with that, do not use this website.
 
 ## usage
 
 go to
-https://sisedu-plus.onrender.com
+https://sisedu-plus.onrender.com (or cloudflare worker in the near future
 then login with your school account {student id}@sequoiainternationalschool.com. If you dont know your password, go to https://www.sisedu.org and change your password.
 
 ## Contributing
