@@ -1,61 +1,71 @@
 //edited to work with cloudflare worker
-const express = require("express");
-const { createProxyMiddleware, responseInterceptor } = require("http-proxy-middleware");
-
 const TARGET = "https://www.sisedu.org";
-const app = express();
 
-app.use("/plus", express.static("public"));
+export default {
+    async fetch(req, env) {
+        const url = new URL(req.url);
 
-app.use(
-    "/",
-    createProxyMiddleware({
-        target: TARGET,
-        changeOrigin: true,
-        autoRewrite: true,          //fix redirect location header(s)
-        cookieDomainRewrite: "",    //yummy cookies
-        selfHandleResponse: true,   //need for editing responses
-        on: {
-            //make the school site think requests come from itself (fixes sveltekit origin checks) (& a epic prank)
-            proxyReq: (proxyReq, req) => {
-                if (req.headers.origin) proxyReq.setHeader("origin", TARGET);
-                if (req.headers.referer) proxyReq.setHeader("referer", TARGET + req.url);
-            },
+        //serve skin.css / skin.js / early.js from /plus/ (idk if i added it yet i forgot) 
+        if (url.pathname.startsWith("/plus/")) {
+            return env.ASSETS.fetch(req);
+        }
 
-            proxyRes: responseInterceptor(async (buffer, proxyRes, req, res) => {
-                res.removeHeader("content-security-policy");
-                res.removeHeader("x-frame-options");
+        //build the request going to the school site
+        const upstreamUrl = TARGET + url.pathname + url.search;
+        const upstreamReq = new Request(upstreamUrl, req);
 
-                const loc = res.getHeader("location");
-                if (loc) {
-                    try {
-                        const u = new URL(String(loc), TARGET);
-                        if (u.host === new URL(TARGET).host) {
-                            res.setHeader("location", u.pathname + u.search + u.hash);
-                        }
-                    } catch (e) {}
+        //make the school site think requests come from itself (fixes sveltekit origin checks) (& a epic prank)
+        upstreamReq.headers.set("origin", TARGET);
+        if (req.headers.get("referer")) {
+            upstreamReq.headers.set("referer", TARGET + url.pathname);
+        }
+
+        let res = await fetch(upstreamReq, { redirect: "manual" });
+
+        //keep redirects inside the proxy
+        const loc = res.headers.get("location");
+        if (loc) {
+            try {
+                const u = new URL(loc, TARGET);
+                if (u.host === new URL(TARGET).host) {
+                    const headers = new Headers(res.headers);
+                    headers.set("location", u.pathname + u.search + u.hash);
+                    res = new Response(res.body, { status: res.status, headers });
                 }
+            } catch (e) {}
+        }
 
-                const type = String(proxyRes.headers["content-type"] || "");
-                const isHtml = type.includes("text/html");
-                const isJs = type.includes("javascript");
-                if (!isHtml && !isJs) return buffer;
+        const type = res.headers.get("content-type") || "";
+        const isHtml = type.includes("text/html");
+        const isJs = type.includes("javascript");
 
-                const publicUrl = "https://" + req.headers.host;
-                let body = buffer.toString("utf8");
-                body = body.split(TARGET).join(publicUrl);
+        //non html/js (images, fonts, etc) just pass through, headers loosened
+        if (!isHtml && !isJs) {
+            const headers = new Headers(res.headers);
+            headers.delete("content-security-policy");
+            headers.delete("x-frame-options");
+            return new Response(res.body, { status: res.status, headers });
+        }
 
-                if (isHtml) {
-                    body = body.replace(/<head[^>]*>/, (m) => m + '<script src="/plus/early.js"></script>');
-                    const inject =
-                        '<link rel="stylesheet" href="/plus/skin.css">' +
-                        '<script src="/plus/skin.js" defer></script>';
-                    body = body.replace("</head>", inject + "</head>");
-                }
-                return body;
-            }),
-        },
-    })
-);
+        const publicUrl = "https://" + url.host;
+        let body = await res.text();
+        body = body.split(TARGET).join(publicUrl); //make absolute links point at the proxy
 
-app.listen(process.env.PORT || 3000);
+        if (isHtml) {
+            //early.js (idk if i added it yet i forgot) goes first in <head>, so it runs before the portal's own scripts
+            body = body.replace(/<head[^>]*>/, (m) => m + '<script src="/plus/early.js"></script>');
+
+            //skin files go at the end of <head>
+            const inject =
+                '<link rel="stylesheet" href="/plus/skin.css">' +
+                '<script src="/plus/skin.js" defer></script>';
+            body = body.replace("</head>", inject + "</head>");
+        }
+
+        const headers = new Headers(res.headers);
+        headers.delete("content-security-policy");
+        headers.delete("x-frame-options");
+        headers.delete("content-length"); //body length changed since i edited it
+        return new Response(body, { status: res.status, headers });
+    },
+};
